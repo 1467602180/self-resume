@@ -1,12 +1,13 @@
-import { Button, Drawer, Tab, Typography } from '@alifd/next';
+import { Button, Divider, Drawer, Tab, Tag, Typography } from '@alifd/next';
 import html2pdf from 'html2pdf.js/dist/html2pdf.bundle.min';
 import store from '@/store';
 import { useBoolean } from 'ahooks';
 import UserinfoForm from '@/components/userinfoForm/userinfoForm';
 import SelfIntroduceForm from '@/components/selfIntroduceForm/selfIntroduceForm';
+import { randomString } from '@/utils';
 
 const Home = () => {
-  const [{ userinfo, selfIntroduce }] = store.useModel('resume');
+  const [{ userinfo, selfIntroduce, projects }] = store.useModel('resume');
   const [drawerVisible, drawerVisibleAction] = useBoolean(false);
 
   const ResumeUserinfo = () => {
@@ -86,8 +87,27 @@ const Home = () => {
                 {selfIntroduce}
               </Typography.Text>
             </div>
+            <Divider />
             <div className={'py-2 px-4'}>
               <Typography.H4>项目经历</Typography.H4>
+              {projects.map((item) => (
+                <div key={randomString()} className={'space-y-2'}>
+                  <div className={'space-x-2 flex items-center'}>
+                    <span className={'text-sm'}>{item.name}</span>
+                    {item.tags.map((d) => (
+                      <Tag key={randomString()} color={d.color} size={'small'}>
+                        {d.name}
+                      </Tag>
+                    ))}
+                  </div>
+                  <Typography.Text>项目介绍：{item.introduce}</Typography.Text>
+                  <ul className={'list-disc list-inside'}>
+                    {item.lists.map((dd) => (
+                      <li key={randomString()}>{dd}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </div>
           </div>
         </div>

@@ -10,6 +10,23 @@ export default {
       wechat: 'hexxxxxxx',
     },
     selfIntroduce: 'xxxxxx',
+    projects: [
+      {
+        name: 'xxx项目',
+        tags: [
+          {
+            name: 'xxx',
+            color: 'blue',
+          },
+          {
+            name: 'xxx',
+            color: 'turquoise',
+          },
+        ],
+        introduce: 'xxx',
+        lists: ['xxx', 'xxx'],
+      },
+    ],
   },
   reducers: {
     updateUserinfo(prevState, payload: { name: string; value: string }) {
