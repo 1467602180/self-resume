@@ -46,6 +46,9 @@ const SelfIntroduceForm = () => {
               title={'自我介绍'}
               name={'selfIntroduce'}
               x-component={'Input.TextArea'}
+              x-component-props={{
+                autoHeight: true,
+              }}
               x-decorator={'FormItem'}
               required
             />

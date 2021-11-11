@@ -1,4 +1,4 @@
-import { Button, Divider, Drawer, Tab, Tag, Typography } from '@alifd/next';
+import { Button, Divider, Drawer, Tab, Tag, Timeline, Typography } from '@alifd/next';
 import html2pdf from 'html2pdf.js/dist/html2pdf.bundle.min';
 import store from '@/store';
 import { useBoolean } from 'ahooks';
@@ -6,9 +6,11 @@ import UserinfoForm from '@/components/userinfoForm/userinfoForm';
 import SelfIntroduceForm from '@/components/selfIntroduceForm/selfIntroduceForm';
 import { randomString } from '@/utils';
 import ProjectsForm from '@/components/projectsForm/projectsForm';
+import TitleColorTag from '@/components/titleColorTag/titleColorTag';
+import EducationExperienceForm from '@/components/educationExperienceForm/educationExperienceForm';
 
 const Home = () => {
-  const [{ userinfo, selfIntroduce, projects }] = store.useModel('resume');
+  const [{ userinfo, selfIntroduce, projects, educationExperience }] = store.useModel('resume');
   const [drawerVisible, drawerVisibleAction] = useBoolean(false);
 
   const ResumeUserinfo = () => {
@@ -76,6 +78,66 @@ const Home = () => {
     );
   };
 
+  const EducationExperience = () => {
+    return (
+      <div className={'py-2 px-4'}>
+        <TitleColorTag>教育经历</TitleColorTag>
+        <div>
+          <Timeline>
+            {educationExperience?.map((item) => (
+              <Timeline.Item
+                key={randomString()}
+                time={`${item.date?.start} --- ${item.date?.end}`}
+                title={
+                  <div className={'space-x-2 flex items-center'}>
+                    <span>{item.school}</span>
+                    <Tag size={'small'} type={'primary'} color={'blue'}>
+                      {item.education}
+                    </Tag>
+                  </div>
+                }
+              />
+            ))}
+          </Timeline>
+        </div>
+      </div>
+    );
+  };
+
+  const Projects = () => {
+    return (
+      <div className={'py-2 px-4'}>
+        <TitleColorTag>项目经历</TitleColorTag>
+        <div className={'space-y-4'}>
+          {projects.map((item, index) => (
+            <div key={randomString()} className={'space-y-2'}>
+              <div className={'space-x-2 flex items-center'}>
+                <span className={'text-sm'}>
+                  {index + 1}.{item.name}
+                </span>
+                {item.tags?.map((d) => (
+                  <Tag key={randomString()} type={'primary'} color={d.color} size={'small'}>
+                    {d.name}
+                  </Tag>
+                ))}
+              </div>
+              <div className={'h-1'} />
+              <span className={'whitespace-pre-line'}>项目介绍：{item.introduce}</span>
+              <ul className={'list-disc list-inside'}>
+                {item.lists?.map((dd) => (
+                  <li key={randomString()} className={'font-semibold'}>
+                    {dd}
+                  </li>
+                ))}
+              </ul>
+              <Divider />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
       <div className={'flex justify-center'}>
@@ -83,38 +145,19 @@ const Home = () => {
           <div id={'self-resume'}>
             <ResumeUserinfo />
             <div className={'py-2 px-4'}>
-              <Typography.H4>自我介绍</Typography.H4>
+              <TitleColorTag>自我介绍</TitleColorTag>
               <Typography.Text strong className={'whitespace-pre-line'}>
                 {selfIntroduce}
               </Typography.Text>
             </div>
-            <Divider />
-            <div className={'py-2 px-4'}>
-              <Typography.H4>项目经历</Typography.H4>
-              {projects.map((item) => (
-                <div key={randomString()} className={'space-y-2'}>
-                  <div className={'space-x-2 flex items-center'}>
-                    <span className={'text-sm'}>{item.name}</span>
-                    {item.tags.map((d) => (
-                      <Tag key={randomString()} color={d.color} size={'small'}>
-                        {d.name}
-                      </Tag>
-                    ))}
-                  </div>
-                  <Typography.Text>项目介绍：{item.introduce}</Typography.Text>
-                  <ul className={'list-disc list-inside'}>
-                    {item.lists.map((dd) => (
-                      <li key={randomString()}>{dd}</li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
+            <EducationExperience />
+            <Projects />
           </div>
         </div>
       </div>
       <ToolButton />
       <Drawer
+        cache
         title={'编辑简历'}
         width={800}
         visible={drawerVisible}
@@ -128,6 +171,9 @@ const Home = () => {
           </Tab.Item>
           <Tab.Item title={'自我介绍'} key={'selfIntroduce'}>
             <SelfIntroduceForm />
+          </Tab.Item>
+          <Tab.Item title={'教育经历'} key={'educationExperience'}>
+            <EducationExperienceForm />
           </Tab.Item>
           <Tab.Item title={'项目经历'} key={'projects'}>
             <ProjectsForm />
