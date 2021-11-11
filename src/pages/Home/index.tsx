@@ -5,6 +5,7 @@ import { useBoolean } from 'ahooks';
 import UserinfoForm from '@/components/userinfoForm/userinfoForm';
 import SelfIntroduceForm from '@/components/selfIntroduceForm/selfIntroduceForm';
 import { randomString } from '@/utils';
+import ProjectsForm from '@/components/projectsForm/projectsForm';
 
 const Home = () => {
   const [{ userinfo, selfIntroduce, projects }] = store.useModel('resume');
@@ -127,6 +128,9 @@ const Home = () => {
           </Tab.Item>
           <Tab.Item title={'自我介绍'} key={'selfIntroduce'}>
             <SelfIntroduceForm />
+          </Tab.Item>
+          <Tab.Item title={'项目经历'} key={'projects'}>
+            <ProjectsForm />
           </Tab.Item>
         </Tab>
       </Drawer>

@@ -29,19 +29,22 @@ export default {
     ],
   },
   reducers: {
-    updateUserinfo(prevState, payload: { name: string; value: string }) {
+    updateUserinfo(prevState, payload) {
       return {
         ...prevState,
-        userinfo: {
-          ...prevState.userinfo,
-          [payload.name]: payload.value,
-        },
+        userinfo: payload,
       };
     },
     updateSelfIntroduce(preState, payload) {
       return {
         ...preState,
         selfIntroduce: payload,
+      };
+    },
+    updateProjects(preState, payload) {
+      return {
+        ...preState,
+        projects: payload,
       };
     },
   },
