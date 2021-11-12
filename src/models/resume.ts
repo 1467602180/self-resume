@@ -80,5 +80,8 @@ export default {
         educationExperience: payload,
       };
     },
+    updateAll(preState, payload) {
+      return payload;
+    },
   },
 };

@@ -1,5 +1,5 @@
 {
-  "vite": true,
   "plugins": [],
+  "vite": true,
   "fastRefresh": false
 }

@@ -1,4 +1,17 @@
-import { Button, Divider, Drawer, Tab, Tag, Timeline, Typography } from '@alifd/next';
+import {
+  Box,
+  Button,
+  Card,
+  Dialog,
+  Divider,
+  Drawer,
+  MenuButton,
+  Message,
+  Tab,
+  Tag,
+  Timeline,
+  Typography,
+} from '@alifd/next';
 import html2pdf from 'html2pdf.js/dist/html2pdf.bundle.min';
 import store from '@/store';
 import { useBoolean } from 'ahooks';
@@ -8,10 +21,91 @@ import { randomString } from '@/utils';
 import ProjectsForm from '@/components/projectsForm/projectsForm';
 import TitleColorTag from '@/components/titleColorTag/titleColorTag';
 import EducationExperienceForm from '@/components/educationExperienceForm/educationExperienceForm';
+import { FormDialog, FormItem, FormLayout, Input, Upload } from '@formily/next';
+import { useEffect, useMemo, useState } from 'react';
+import { createSchemaField, useField } from '@formily/react';
+import { StorageType } from '@/types/type';
+import moment from 'moment';
+import * as localforage from 'localforage';
+
+const JsonFileSelect = () => {
+  const field = useField();
+  const [file, setFile] = useState<File>();
+  return file ? (
+    <div className={'py-1 px-2 flex items-center space-x-1 bg-gray-100 rounded-md'}>
+      <span>{file.name}</span>
+      <div className={'flex-1 flex justify-end'}>
+        <Button
+          size={'small'}
+          type={'primary'}
+          warning
+          onClick={() => {
+            setFile(undefined);
+            field.form.setValues({
+              file: undefined,
+            });
+          }}
+        >
+          删除
+        </Button>
+      </div>
+    </div>
+  ) : (
+    <Button
+      type={'primary'}
+      onClick={() => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.click();
+        input.addEventListener('change', () => {
+          if (input.files) {
+            const file = input.files[input.files.length - 1];
+            setFile(file);
+            const reader = new FileReader();
+            reader.onload = () => {
+              field.form.setValues({
+                file: reader.result,
+              });
+            };
+            reader.readAsText(file);
+          }
+        });
+        input.remove();
+      }}
+    >
+      选择文件
+    </Button>
+  );
+};
 
 const Home = () => {
-  const [{ userinfo, selfIntroduce, projects, educationExperience }] = store.useModel('resume');
+  const [{ userinfo, selfIntroduce, projects, educationExperience }, resumeDispatch] = store.useModel('resume');
+  const [storageState, setStorageState] = useState<StorageType[]>([]);
   const [drawerVisible, drawerVisibleAction] = useBoolean(false);
+  const [loadDrawerVisible, loadDrawerVisibleAction] = useBoolean(false);
+  const SchemaField = useMemo(
+    () =>
+      createSchemaField({
+        components: {
+          FormItem,
+          Input,
+          Upload,
+          FormLayout,
+          JsonFileSelect,
+        },
+      }),
+    [],
+  );
+  useEffect(() => {
+    if (loadDrawerVisible) {
+      localforage.getItem('storage').then((value: StorageType[]) => {
+        if (value) {
+          setStorageState(value);
+        }
+      });
+    }
+  }, [loadDrawerVisible]);
 
   const ResumeUserinfo = () => {
     return (
@@ -56,6 +150,149 @@ const Home = () => {
   const ToolButton = () => {
     return (
       <div className={'fixed top-2 right-2 space-x-2'}>
+        <MenuButton label={'更多操作'} type={'secondary'} autoWidth={false}>
+          <MenuButton.Item
+            key={'save'}
+            onClick={() => {
+              FormDialog(
+                {
+                  title: '保存为模板',
+                  style: {
+                    width: 400,
+                  },
+                },
+                () => (
+                  <SchemaField>
+                    <SchemaField.String
+                      title={'模板名'}
+                      name={'name'}
+                      required
+                      x-component={'Input'}
+                      x-decorator={'FormItem'}
+                    />
+                  </SchemaField>
+                ),
+              )
+                .forConfirm(async (payload, next) => {
+                  const storage = ((await localforage.getItem('storage')) as StorageType[]) || [];
+                  storage.push({
+                    id: randomString(),
+                    name: payload.values.name,
+                    date: moment().format('YYYY-MM-DD HH:mm:ss'),
+                    data: {
+                      userinfo,
+                      selfIntroduce,
+                      projects,
+                      educationExperience,
+                    },
+                  });
+                  await localforage.setItem('storage', storage);
+                  next(payload);
+                })
+                .forCancel((payload, next) => {
+                  next(payload);
+                })
+                .open()
+                .then();
+            }}
+          >
+            保存为模板
+          </MenuButton.Item>
+          <MenuButton.Item
+            key={'load'}
+            onClick={() => {
+              loadDrawerVisibleAction.toggle();
+            }}
+          >
+            加载模板
+          </MenuButton.Item>
+          <MenuButton.Item
+            key={'export'}
+            onClick={async () => {
+              const storage = (await localforage.getItem('storage')) as StorageType[];
+              if (storage) {
+                const blob = new Blob([JSON.stringify(storage)], { type: 'text/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = '简历模板.json';
+                a.click();
+                a.remove();
+              } else {
+                Message.error({ title: '无模板数据可导出' });
+              }
+            }}
+          >
+            导出模板数据
+          </MenuButton.Item>
+          <MenuButton.Item
+            key={'exportLocal'}
+            onClick={() => {
+              const data = {
+                userinfo,
+                selfIntroduce,
+                projects,
+                educationExperience,
+              };
+              const blob = new Blob([JSON.stringify(data)], { type: 'text/json' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = '简历.json';
+              a.click();
+              a.remove();
+            }}
+          >
+            导出当前数据
+          </MenuButton.Item>
+          <MenuButton.Item
+            key={'loadTemp'}
+            onClick={() => {
+              FormDialog(
+                {
+                  title: '导入模板数据',
+                  style: {
+                    width: 300,
+                  },
+                },
+                () => (
+                  <SchemaField>
+                    <SchemaField.Void
+                      x-component={'FormLayout'}
+                      x-component-props={{
+                        layout: 'vertical',
+                      }}
+                    >
+                      <SchemaField.Array
+                        title={'模板json文件'}
+                        name={'file'}
+                        x-decorator={'FormItem'}
+                        required
+                        x-component={'JsonFileSelect'}
+                      />
+                    </SchemaField.Void>
+                  </SchemaField>
+                ),
+              )
+                .forConfirm(async (payload, next) => {
+                  const file = payload.values.file;
+                  console.log(JSON.parse(file));
+                })
+                .open()
+                .then();
+            }}
+          >
+            导入模板数据
+          </MenuButton.Item>
+        </MenuButton>
+        <Button
+          type={'secondary'}
+          onClick={() => {
+            drawerVisibleAction.toggle();
+          }}
+        >
+          编辑简历
+        </Button>
         <Button
           type={'primary'}
           onClick={() => {
@@ -65,14 +302,6 @@ const Home = () => {
           }}
         >
           导出简历
-        </Button>
-        <Button
-          type={'secondary'}
-          onClick={() => {
-            drawerVisibleAction.toggle();
-          }}
-        >
-          编辑简历
         </Button>
       </div>
     );
@@ -123,13 +352,16 @@ const Home = () => {
               </div>
               <div className={'h-1'} />
               <span className={'whitespace-pre-line'}>项目介绍：{item.introduce}</span>
-              <ul className={'list-disc list-inside'}>
+              <div className={'space-y-1'}>
                 {item.lists?.map((dd) => (
-                  <li key={randomString()} className={'font-semibold'}>
-                    {dd}
-                  </li>
+                  <div className={'flex items-center space-x-2'} key={randomString()}>
+                    <div className={'w-1 h-1 rounded-full bg-gray-900'} />
+                    <span key={randomString()} className={'font-semibold'}>
+                      {dd}
+                    </span>
+                  </div>
                 ))}
-              </ul>
+              </div>
               <Divider />
             </div>
           ))}
@@ -179,6 +411,66 @@ const Home = () => {
             <ProjectsForm />
           </Tab.Item>
         </Tab>
+      </Drawer>
+      <Drawer
+        title={'加载模板'}
+        height={500}
+        visible={loadDrawerVisible}
+        onClose={() => {
+          loadDrawerVisibleAction.toggle();
+        }}
+        placement={'bottom'}
+      >
+        {storageState.length === 0 ? (
+          <div className={'h-20 flex justify-center items-center'}>无模板</div>
+        ) : (
+          <div className={'grid grid-cols-1 md:grid-cols-3 gap-4'}>
+            {storageState.map((item) => (
+              <Card free>
+                <Card.Header
+                  title={item.name}
+                  subTitle={item.date}
+                  key={item.id}
+                  extra={
+                    <Box direction={'row'} spacing={20}>
+                      <Button
+                        type={'primary'}
+                        onClick={() => {
+                          resumeDispatch.updateAll(item.data);
+                          loadDrawerVisibleAction.toggle();
+                        }}
+                      >
+                        使用此模板
+                      </Button>
+                      <Button
+                        type={'primary'}
+                        warning
+                        onClick={() => {
+                          Dialog.confirm({
+                            title: '删除提醒',
+                            content: '确定删除此模板吗？',
+                            onOk: async () => {
+                              const storage = (await localforage.getItem('storage')) as StorageType[];
+                              if (storage) {
+                                await localforage.setItem(
+                                  'storage',
+                                  storage.filter((d) => d.id !== item.id),
+                                );
+                                setStorageState((value) => value.filter((d) => d.id !== item.id));
+                              }
+                            },
+                          });
+                        }}
+                      >
+                        删除
+                      </Button>
+                    </Box>
+                  }
+                />
+              </Card>
+            ))}
+          </div>
+        )}
       </Drawer>
     </>
   );
