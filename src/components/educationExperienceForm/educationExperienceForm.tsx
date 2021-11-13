@@ -3,15 +3,17 @@ import { createForm, onFormValuesChange } from '@formily/core';
 import { createSchemaField, FormProvider } from '@formily/react';
 import { ArrayCards, DatePicker, FormItem, FormLayout, Input, Space } from '@formily/next';
 import store from '@/store';
+import { throttleFunc } from '@/utils';
 
 const EducationExperienceForm = () => {
   const [{ educationExperience }, resumeDispatch] = store.useModel('resume');
+  const throttleResumeDispatch = throttleFunc(resumeDispatch.updateEducationExperience, 1000);
   const form = useMemo(
     () =>
       createForm({
         effects() {
           onFormValuesChange((form1) => {
-            resumeDispatch.updateEducationExperience(form1.getFieldState('educationExperience').value);
+            throttleResumeDispatch(form1.getFieldState('educationExperience').value);
           });
         },
         initialValues: {

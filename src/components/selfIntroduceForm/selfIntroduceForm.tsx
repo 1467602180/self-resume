@@ -3,9 +3,11 @@ import { createForm, onFieldValueChange } from '@formily/core';
 import { createSchemaField, FormProvider } from '@formily/react';
 import { FormItem, FormLayout, Input } from '@formily/next';
 import { useMemo } from 'react';
+import { throttleFunc } from '@/utils';
 
 const SelfIntroduceForm = () => {
   const [{ selfIntroduce }, resumeDispatch] = store.useModel('resume');
+  const throttleResumeDispatch = throttleFunc(resumeDispatch.updateSelfIntroduce, 1000);
   const form = useMemo(
     () =>
       createForm({
@@ -14,7 +16,7 @@ const SelfIntroduceForm = () => {
         },
         effects() {
           onFieldValueChange('selfIntroduce', (state) => {
-            resumeDispatch.updateSelfIntroduce(state.value);
+            throttleResumeDispatch(state.value);
           });
         },
       }),

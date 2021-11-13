@@ -1,5 +1,8 @@
 import { FC } from 'react';
 
+/**
+ *  标题头，左边有个紫色色块
+ **/
 const TitleColorTag: FC = (props) => {
   return (
     <div className={'flex space-x-1 items-center mb-2'}>

@@ -17,7 +17,7 @@ import store from '@/store';
 import { useBoolean } from 'ahooks';
 import UserinfoForm from '@/components/userinfoForm/userinfoForm';
 import SelfIntroduceForm from '@/components/selfIntroduceForm/selfIntroduceForm';
-import { randomString } from '@/utils';
+import { compareArray, randomString } from '@/utils';
 import ProjectsForm from '@/components/projectsForm/projectsForm';
 import TitleColorTag from '@/components/titleColorTag/titleColorTag';
 import EducationExperienceForm from '@/components/educationExperienceForm/educationExperienceForm';
@@ -27,10 +27,37 @@ import { createSchemaField, useField } from '@formily/react';
 import { StorageType } from '@/types/type';
 import moment from 'moment';
 import * as localforage from 'localforage';
+import JobsForm from '@/components/jobsForm/jobsForm';
 
+/**
+ * 自定义文件选择组件，用于导入数据时读取本地文件
+ **/
 const JsonFileSelect = () => {
   const field = useField();
   const [file, setFile] = useState<File>();
+  /**
+   * 调用文件选择器并将本地文件内容传入表单项
+   **/
+  const fileSelect = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.click();
+    input.addEventListener('change', () => {
+      if (input.files && input.files.length > 0) {
+        const file = input.files[input.files.length - 1];
+        setFile(file);
+        const reader = new FileReader();
+        reader.onload = () => {
+          field.form.setValues({
+            file: reader.result,
+          });
+        };
+        reader.readAsText(file);
+      }
+    });
+    input.remove();
+  };
   return file ? (
     <div className={'py-1 px-2 flex items-center space-x-1 bg-gray-100 rounded-md'}>
       <span>{file.name}</span>
@@ -51,36 +78,18 @@ const JsonFileSelect = () => {
       </div>
     </div>
   ) : (
-    <Button
-      type={'primary'}
-      onClick={() => {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.json';
-        input.click();
-        input.addEventListener('change', () => {
-          if (input.files) {
-            const file = input.files[input.files.length - 1];
-            setFile(file);
-            const reader = new FileReader();
-            reader.onload = () => {
-              field.form.setValues({
-                file: reader.result,
-              });
-            };
-            reader.readAsText(file);
-          }
-        });
-        input.remove();
-      }}
-    >
+    <Button type={'primary'} onClick={fileSelect}>
       选择文件
     </Button>
   );
 };
 
+const LoadTempText = () => {
+  return <span className={'text-red-500'}>重复的模板数据是不会被导入的哦</span>;
+};
+
 const Home = () => {
-  const [{ userinfo, selfIntroduce, projects, educationExperience }, resumeDispatch] = store.useModel('resume');
+  const [{ userinfo, selfIntroduce, projects, educationExperience, jobs }, resumeDispatch] = store.useModel('resume');
   const [storageState, setStorageState] = useState<StorageType[]>([]);
   const [drawerVisible, drawerVisibleAction] = useBoolean(false);
   const [loadDrawerVisible, loadDrawerVisibleAction] = useBoolean(false);
@@ -93,10 +102,14 @@ const Home = () => {
           Upload,
           FormLayout,
           JsonFileSelect,
+          LoadTempText,
         },
       }),
     [],
   );
+  /**
+   * 在每次打开加载模板的drawer时重新读取本地数据并刷新状态
+   **/
   useEffect(() => {
     if (loadDrawerVisible) {
       localforage.getItem('storage').then((value: StorageType[]) => {
@@ -107,6 +120,9 @@ const Home = () => {
     }
   }, [loadDrawerVisible]);
 
+  /**
+   *  简历个人信息界面
+   **/
   const ResumeUserinfo = () => {
     return (
       <div className={'h-56 bg-gray-900 flex'}>
@@ -147,55 +163,216 @@ const Home = () => {
     );
   };
 
+  /**
+   *  右上角操作按钮
+   **/
   const ToolButton = () => {
+    /**
+     *  保存为模板
+     **/
+    const saveTemp = () => {
+      FormDialog(
+        {
+          title: '保存为模板',
+          style: {
+            width: 400,
+          },
+        },
+        () => (
+          <SchemaField>
+            <SchemaField.String
+              title={'模板名'}
+              name={'name'}
+              required
+              x-component={'Input'}
+              x-decorator={'FormItem'}
+            />
+          </SchemaField>
+        ),
+      )
+        .forConfirm(async (payload, next) => {
+          const storage = ((await localforage.getItem('storage')) as StorageType[]) || [];
+          storage.push({
+            id: randomString(),
+            name: payload.values.name,
+            date: moment().format('YYYY-MM-DD HH:mm:ss'),
+            data: {
+              userinfo,
+              selfIntroduce,
+              projects,
+              educationExperience,
+            },
+          });
+          await localforage.setItem('storage', storage);
+          next(payload);
+        })
+        .forCancel((payload, next) => {
+          next(payload);
+        })
+        .open()
+        .then();
+    };
+    /**
+     *  导出模板数据
+     **/
+    const exportTemp = async () => {
+      const storage = (await localforage.getItem('storage')) as StorageType[];
+      if (storage && storage.length > 0) {
+        const blob = new Blob([JSON.stringify(storage)], { type: 'text/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = '简历模板.json';
+        a.click();
+        a.remove();
+      } else {
+        Message.error({ title: '无模板数据可导出' });
+      }
+    };
+    /**
+     *  导出当前数据
+     **/
+    const exportLocalTemp = () => {
+      const data = {
+        userinfo,
+        selfIntroduce,
+        projects,
+        educationExperience,
+        jobs,
+      };
+      const blob = new Blob([JSON.stringify(data)], { type: 'text/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '简历.json';
+      a.click();
+      a.remove();
+    };
+    /**
+     *  导入模板数据
+     **/
+    const importTemp = () => {
+      FormDialog(
+        {
+          title: '导入模板数据',
+          style: {
+            width: 300,
+          },
+        },
+        () => (
+          <SchemaField>
+            <SchemaField.Void
+              x-component={'FormLayout'}
+              x-component-props={{
+                layout: 'vertical',
+              }}
+            >
+              <SchemaField.String
+                title={'模板json文件'}
+                name={'file'}
+                x-decorator={'FormItem'}
+                required
+                x-component={'JsonFileSelect'}
+              />
+              <SchemaField.Void x-component={'LoadTempText'} />
+            </SchemaField.Void>
+          </SchemaField>
+        ),
+      )
+        .forConfirm(async (payload, next) => {
+          const file = payload.values.file;
+          try {
+            const data = JSON.parse(file) as StorageType[];
+            if (data && data.length > 0) {
+              const checkArray = ['id', 'name', 'date', 'data'];
+              let check = true;
+              for (const item of data) {
+                if (check) {
+                  check = compareArray(checkArray, Object.keys(item));
+                }
+              }
+              if (check) {
+                const storage = ((await localforage.getItem('storage')) || []) as StorageType[];
+                const filterData = data.filter((item) => {
+                  return !storage.some((d) => d.id === item.id);
+                });
+                storage.push(...filterData);
+                await localforage.setItem('storage', storage);
+                setStorageState(storage);
+                Message.success({ title: '导入成功' });
+                next(payload);
+                return;
+              }
+            }
+          } catch (e) {}
+          Message.error({
+            title: '导入失败',
+          });
+        })
+        .open()
+        .then();
+    };
+    /**
+     *  导入当前数据
+     **/
+    const importLocalTemp = () => {
+      FormDialog(
+        {
+          title: '导入当前数据',
+          style: {
+            width: 300,
+          },
+        },
+        () => (
+          <SchemaField>
+            <SchemaField.Void
+              x-component={'FormLayout'}
+              x-component-props={{
+                layout: 'vertical',
+              }}
+            >
+              <SchemaField.String
+                title={'json文件'}
+                name={'file'}
+                x-decorator={'FormItem'}
+                x-component={'JsonFileSelect'}
+                required
+              />
+            </SchemaField.Void>
+          </SchemaField>
+        ),
+      )
+        .forConfirm((payload, next) => {
+          const file = payload.values.file;
+          try {
+            const data = JSON.parse(file);
+            const checkArray = ['userinfo', 'selfIntroduce', 'projects', 'educationExperience', 'jobs'];
+            if (compareArray(checkArray, Object.keys(data))) {
+              resumeDispatch.updateAll(data);
+              Message.success({ title: '导入成功' });
+              next(payload);
+              return;
+            }
+          } catch (e) {}
+          Message.error({
+            title: '导入失败',
+          });
+        })
+        .open()
+        .then();
+    };
+    /**
+     *  导出简历
+     **/
+    const exportResume = () => {
+      html2pdf(document.getElementById('self-resume'), {
+        filename: '简历.pdf',
+      });
+    };
     return (
       <div className={'fixed top-2 right-2 space-x-2'}>
         <MenuButton label={'更多操作'} type={'secondary'} autoWidth={false}>
-          <MenuButton.Item
-            key={'save'}
-            onClick={() => {
-              FormDialog(
-                {
-                  title: '保存为模板',
-                  style: {
-                    width: 400,
-                  },
-                },
-                () => (
-                  <SchemaField>
-                    <SchemaField.String
-                      title={'模板名'}
-                      name={'name'}
-                      required
-                      x-component={'Input'}
-                      x-decorator={'FormItem'}
-                    />
-                  </SchemaField>
-                ),
-              )
-                .forConfirm(async (payload, next) => {
-                  const storage = ((await localforage.getItem('storage')) as StorageType[]) || [];
-                  storage.push({
-                    id: randomString(),
-                    name: payload.values.name,
-                    date: moment().format('YYYY-MM-DD HH:mm:ss'),
-                    data: {
-                      userinfo,
-                      selfIntroduce,
-                      projects,
-                      educationExperience,
-                    },
-                  });
-                  await localforage.setItem('storage', storage);
-                  next(payload);
-                })
-                .forCancel((payload, next) => {
-                  next(payload);
-                })
-                .open()
-                .then();
-            }}
-          >
+          <MenuButton.Item key={'save'} onClick={saveTemp}>
             保存为模板
           </MenuButton.Item>
           <MenuButton.Item
@@ -206,83 +383,17 @@ const Home = () => {
           >
             加载模板
           </MenuButton.Item>
-          <MenuButton.Item
-            key={'export'}
-            onClick={async () => {
-              const storage = (await localforage.getItem('storage')) as StorageType[];
-              if (storage) {
-                const blob = new Blob([JSON.stringify(storage)], { type: 'text/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = '简历模板.json';
-                a.click();
-                a.remove();
-              } else {
-                Message.error({ title: '无模板数据可导出' });
-              }
-            }}
-          >
+          <MenuButton.Item key={'export'} onClick={exportTemp}>
             导出模板数据
           </MenuButton.Item>
-          <MenuButton.Item
-            key={'exportLocal'}
-            onClick={() => {
-              const data = {
-                userinfo,
-                selfIntroduce,
-                projects,
-                educationExperience,
-              };
-              const blob = new Blob([JSON.stringify(data)], { type: 'text/json' });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = '简历.json';
-              a.click();
-              a.remove();
-            }}
-          >
+          <MenuButton.Item key={'exportLocal'} onClick={exportLocalTemp}>
             导出当前数据
           </MenuButton.Item>
-          <MenuButton.Item
-            key={'loadTemp'}
-            onClick={() => {
-              FormDialog(
-                {
-                  title: '导入模板数据',
-                  style: {
-                    width: 300,
-                  },
-                },
-                () => (
-                  <SchemaField>
-                    <SchemaField.Void
-                      x-component={'FormLayout'}
-                      x-component-props={{
-                        layout: 'vertical',
-                      }}
-                    >
-                      <SchemaField.Array
-                        title={'模板json文件'}
-                        name={'file'}
-                        x-decorator={'FormItem'}
-                        required
-                        x-component={'JsonFileSelect'}
-                      />
-                    </SchemaField.Void>
-                  </SchemaField>
-                ),
-              )
-                .forConfirm(async (payload, next) => {
-                  const file = payload.values.file;
-                  console.log(JSON.parse(file));
-                })
-                .open()
-                .then();
-            }}
-          >
+          <MenuButton.Item key={'loadTemp'} onClick={importTemp}>
             导入模板数据
+          </MenuButton.Item>
+          <MenuButton.Item key={'loadLocalTemp'} onClick={importLocalTemp}>
+            导入当前数据
           </MenuButton.Item>
         </MenuButton>
         <Button
@@ -293,20 +404,16 @@ const Home = () => {
         >
           编辑简历
         </Button>
-        <Button
-          type={'primary'}
-          onClick={() => {
-            html2pdf(document.getElementById('self-resume'), {
-              filename: '简历.pdf',
-            });
-          }}
-        >
+        <Button type={'primary'} onClick={exportResume}>
           导出简历
         </Button>
       </div>
     );
   };
 
+  /**
+   *  教育经历界面
+   **/
   const EducationExperience = () => {
     return (
       <div className={'py-2 px-4'}>
@@ -333,6 +440,39 @@ const Home = () => {
     );
   };
 
+  /**
+   *  工作经历界面
+   **/
+  const Jobs = () => {
+    return (
+      <div className={'py-2 px-4'}>
+        <TitleColorTag>工作经历</TitleColorTag>
+        <Timeline>
+          {jobs.map((item) => (
+            <Timeline.Item
+              key={randomString()}
+              time={`${item.date?.start} --- ${item.date?.end}`}
+              title={
+                <div className={'flex items-center space-x-2'}>
+                  <span>{item.name}</span>
+                  {item.tags?.map((d) => (
+                    <Tag color={d.color} type={'primary'} size={'small'} key={randomString()}>
+                      {d.name}
+                    </Tag>
+                  ))}
+                </div>
+              }
+              content={<span className={'whitespace-pre-line'}>职责描述：{item.introduce}</span>}
+            />
+          ))}
+        </Timeline>
+      </div>
+    );
+  };
+
+  /**
+   *  项目经历界面
+   **/
   const Projects = () => {
     return (
       <div className={'py-2 px-4'}>
@@ -373,7 +513,7 @@ const Home = () => {
   return (
     <>
       <div className={'flex justify-center'}>
-        <div className={'h-screen overflow-y-auto w-screen lg:w-1/3 shadow-2xl'}>
+        <div className={'min-h-screen w-screen lg:w-1/3 shadow-2xl'}>
           <div id={'self-resume'}>
             <ResumeUserinfo />
             <div className={'py-2 px-4'}>
@@ -383,6 +523,7 @@ const Home = () => {
               </Typography.Text>
             </div>
             <EducationExperience />
+            <Jobs />
             <Projects />
           </div>
         </div>
@@ -407,6 +548,9 @@ const Home = () => {
           <Tab.Item title={'教育经历'} key={'educationExperience'}>
             <EducationExperienceForm />
           </Tab.Item>
+          <Tab.Item title={'工作经历'} key={'jobs'}>
+            <JobsForm />
+          </Tab.Item>
           <Tab.Item title={'项目经历'} key={'projects'}>
             <ProjectsForm />
           </Tab.Item>
@@ -426,11 +570,10 @@ const Home = () => {
         ) : (
           <div className={'grid grid-cols-1 md:grid-cols-3 gap-4'}>
             {storageState.map((item) => (
-              <Card free>
+              <Card free key={item.id}>
                 <Card.Header
                   title={item.name}
                   subTitle={item.date}
-                  key={item.id}
                   extra={
                     <Box direction={'row'} spacing={20}>
                       <Button

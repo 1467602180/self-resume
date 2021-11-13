@@ -4,24 +4,41 @@ export default {
       avatar: '/avatar.png',
       nickname: '怎么学都学不会的何同学',
       intentionJob: '前端开发工程师',
-      phone: '13243737707',
+      phone: '132xxxxxxxx',
       mail: '1467602180@qq.com',
       qq: '1467602180',
       wechat: 'he1467602180',
     },
     selfIntroduce:
-      '于2020年7月，毕业于中山职业技术学院的信息安全与管理专业，在校期间加入校内大数据双创工作室，学习大数据可视化和数据清洗等技术，为校参与竞赛。获取过省二，国二等竞赛成绩。\n\n' +
+      '于2020年7月，毕业于xxx大学的xxx专业，在校期间加入校内大数据双创工作室，学习大数据可视化和数据清洗等技术，为校参与竞赛。获取过省二，国二等竞赛成绩。\n\n' +
       '大二期间，开始自学前端，开发自己的应用程序，涉及了vue，flutter等框架和lua，python，golang等语言，在校内开发了校园宿舍电量可视化，工作室论坛等系统。\n\n' +
       '工作期间，为了迎合项目，自学了react，angular，webpack等技术。\n\n' +
       '总结：我十分勤奋且好学，对技术有追求，对代码有规范，对一切新技术保持着热爱和追求。',
     educationExperience: [
       {
         date: {
-          start: '2017-9-1',
-          end: '2020-7-1',
+          start: '2017-09-01',
+          end: '2020-07-01',
         },
-        school: '中山职业技术学院',
-        education: '大专',
+        school: 'xxx大学',
+        education: '本科',
+      },
+    ],
+    jobs: [
+      {
+        name: 'xxx科技有限公司',
+        date: {
+          start: '2019-12-01',
+          end: '2021-05-30',
+        },
+        tags: [
+          {
+            name: '前端负责人',
+            color: 'blue',
+          },
+        ],
+        introduce:
+          '此公司的主营的是物联网硬件业务，开发的基本都是ToC的项目，涉及到很多与硬件设备之间的控制和联调。开发的范围涉及Web、App和小程序。',
       },
     ],
     projects: [
@@ -78,6 +95,12 @@ export default {
       return {
         ...preState,
         educationExperience: payload,
+      };
+    },
+    updateJobs(preState, payload) {
+      return {
+        ...preState,
+        jobs: payload,
       };
     },
     updateAll(preState, payload) {

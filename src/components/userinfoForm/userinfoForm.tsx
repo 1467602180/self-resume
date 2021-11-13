@@ -3,9 +3,11 @@ import { createForm, onFormValuesChange } from '@formily/core';
 import { useMemo } from 'react';
 import { createSchemaField, FormProvider } from '@formily/react';
 import { FormItem, FormLayout, Input } from '@formily/next';
+import { throttleFunc } from '@/utils';
 
 const UserinfoForm = () => {
   const [{ userinfo }, resumeDispatch] = store.useModel('resume');
+  const throttleResumeDispatch = throttleFunc(resumeDispatch.updateUserinfo, 1000);
   const form = useMemo(
     () =>
       createForm({
@@ -14,7 +16,7 @@ const UserinfoForm = () => {
         },
         effects() {
           onFormValuesChange((form1) => {
-            resumeDispatch.updateUserinfo(form1.values);
+            throttleResumeDispatch(form1.values);
           });
         },
       }),

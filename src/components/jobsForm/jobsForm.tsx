@@ -1,39 +1,40 @@
 import { useMemo } from 'react';
 import { createForm, onFormValuesChange } from '@formily/core';
 import { createSchemaField, FormProvider } from '@formily/react';
-import { ArrayCards, ArrayItems, FormItem, FormLayout, Input, Select, Space } from '@formily/next';
-import store from '@/store';
+import { ArrayCards, ArrayItems, DatePicker, FormItem, FormLayout, Input, Select, Space } from '@formily/next';
 import { Tag, Typography } from '@alifd/next';
+import store from '@/store';
 import { throttleFunc } from '@/utils';
 
-const ProjectsForm = () => {
-  const [{ projects }, resumeDispatch] = store.useModel('resume');
-  const throttleResumeDispatch = throttleFunc(resumeDispatch.updateProjects, 1000);
+const JobsForm = () => {
+  const [{ jobs }, resumeDispatch] = store.useModel('resume');
+  const throttleDispatch = throttleFunc(resumeDispatch.updateJobs, 1000);
   const form = useMemo(
     () =>
       createForm({
         initialValues: {
-          projects,
+          jobs,
         },
         effects() {
           onFormValuesChange((form1) => {
-            throttleResumeDispatch(form1.getFieldState('projects').value);
+            throttleDispatch(form1.getFieldState('jobs').value);
           });
         },
       }),
-    [projects, resumeDispatch],
+    [jobs],
   );
   const SchemaField = useMemo(
     () =>
       createSchemaField({
         components: {
-          ArrayCards,
           FormItem,
-          Input,
-          ArrayItems,
-          Space,
-          Select,
           FormLayout,
+          Input,
+          Select,
+          ArrayCards,
+          Space,
+          DatePicker,
+          ArrayItems,
         },
       }),
     [],
@@ -43,14 +44,16 @@ const ProjectsForm = () => {
       <FormProvider form={form}>
         <SchemaField>
           <SchemaField.Array
-            name={'projects'}
-            x-decorator={'FormItem'}
+            name={'jobs'}
             x-component={'ArrayCards'}
             x-component-props={{
-              title: '项目经历',
+              title: '工作经历',
             }}
           >
             <SchemaField.Object>
+              <SchemaField.Void x-component={'ArrayCards.Remove'} />
+              <SchemaField.Void x-component={'ArrayCards.MoveUp'} />
+              <SchemaField.Void x-component={'ArrayCards.MoveDown'} />
               <SchemaField.Void
                 x-component={'FormLayout'}
                 x-component-props={{
@@ -58,23 +61,22 @@ const ProjectsForm = () => {
                 }}
               >
                 <SchemaField.String
-                  title={'项目名称'}
+                  title={'公司名称'}
                   name={'name'}
-                  required
                   x-decorator={'FormItem'}
+                  required
                   x-component={'Input'}
                 />
-                <SchemaField.String
-                  title={'项目介绍'}
-                  name={'introduce'}
-                  required
-                  x-decorator={'FormItem'}
-                  x-component={'Input.TextArea'}
-                  x-component-props={{
-                    autoHeight: true,
-                  }}
-                />
-                <SchemaField.Array title={'标签'} name={'tags'} x-decorator={'FormItem'} x-component={'ArrayItems'}>
+                <SchemaField.Object name={'date'}>
+                  <SchemaField.String
+                    title={'就职时间'}
+                    name={'[start,end]'}
+                    x-decorator={'FormItem'}
+                    required
+                    x-component={'DatePicker.RangePicker'}
+                  />
+                </SchemaField.Object>
+                <SchemaField.Array name={'tags'} title={'标签'} x-decorator={'FormItem'} x-component={'ArrayItems'}>
                   <SchemaField.Object>
                     <SchemaField.Void
                       x-component={'Space'}
@@ -155,36 +157,19 @@ const ProjectsForm = () => {
                   </SchemaField.Object>
                   <SchemaField.Void x-component={'ArrayItems.Addition'} title={'添加标签'} />
                 </SchemaField.Array>
-                <SchemaField.Array
-                  title={'项目描述'}
-                  name={'lists'}
+                <SchemaField.String
+                  title={'职责描述'}
+                  name={'introduce'}
+                  required
                   x-decorator={'FormItem'}
-                  x-component={'ArrayItems'}
-                >
-                  <SchemaField.Void
-                    x-component={'Space'}
-                    x-component-props={{
-                      wrap: true,
-                    }}
-                  >
-                    <SchemaField.Void x-component={'ArrayItems.SortHandle'} />
-                    <SchemaField.String
-                      x-component={'Input.TextArea'}
-                      required
-                      x-component-props={{
-                        autoHeight: true,
-                      }}
-                    />
-                    <SchemaField.Void x-component={'ArrayItems.Remove'} />
-                  </SchemaField.Void>
-                  <SchemaField.Void x-component={'ArrayItems.Addition'} title={'添加描述'} />
-                </SchemaField.Array>
+                  x-component={'Input.TextArea'}
+                  x-component-props={{
+                    autoHeight: true,
+                  }}
+                />
               </SchemaField.Void>
-              <SchemaField.Void x-component="ArrayCards.Remove" />
-              <SchemaField.Void x-component="ArrayCards.MoveUp" />
-              <SchemaField.Void x-component="ArrayCards.MoveDown" />
             </SchemaField.Object>
-            <SchemaField.Void title={'添加项目'} x-component={'ArrayCards.Addition'} />
+            <SchemaField.Void x-component={'ArrayCards.Addition'} title={'增加工作经历'} />
           </SchemaField.Array>
         </SchemaField>
       </FormProvider>
@@ -192,4 +177,4 @@ const ProjectsForm = () => {
   );
 };
 
-export default ProjectsForm;
+export default JobsForm;
