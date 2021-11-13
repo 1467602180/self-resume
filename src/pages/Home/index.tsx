@@ -528,6 +528,15 @@ const Home = () => {
           </div>
         </div>
       </div>
+      <div className={'pt-4 pb-2 flex justify-center items-center'}>
+        <span>
+          ©
+          <a href="https://github.com/1467602180" target={'_blank'}>
+            怎么学都学不会的何同学
+          </a>{' '}
+          By 2021-11
+        </span>
+      </div>
       <ToolButton />
       <Drawer
         cache
