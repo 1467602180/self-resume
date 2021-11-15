@@ -53,28 +53,35 @@ const EducationExperienceForm = () => {
               <SchemaField.Void x-component={'ArrayCards.Remove'} />
               <SchemaField.Void x-component={'ArrayCards.MoveUp'} />
               <SchemaField.Void x-component={'ArrayCards.MoveDown'} />
-              <SchemaField.String
-                title={'学校名称'}
-                name={'school'}
-                x-decorator={'FormItem'}
-                x-component={'Input'}
-                required
-              />
-              <SchemaField.String
-                title={'学历'}
-                name={'education'}
-                x-decorator={'FormItem'}
-                x-component={'Input'}
-                required
-              />
-              <SchemaField.Object name={'date'}>
+              <SchemaField.Void
+                x-component={'FormLayout'}
+                x-component-props={{
+                  layout: 'vertical',
+                }}
+              >
                 <SchemaField.String
-                  title={'就读时间'}
-                  name={'[start,end]'}
+                  title={'学校名称'}
+                  name={'school'}
                   x-decorator={'FormItem'}
-                  x-component={'CustomDatePicker'}
+                  x-component={'Input'}
+                  required
                 />
-              </SchemaField.Object>
+                <SchemaField.String
+                  title={'学历'}
+                  name={'education'}
+                  x-decorator={'FormItem'}
+                  x-component={'Input'}
+                  required
+                />
+                <SchemaField.Object name={'date'}>
+                  <SchemaField.String
+                    title={'就读时间'}
+                    name={'[start,end]'}
+                    x-decorator={'FormItem'}
+                    x-component={'CustomDatePicker'}
+                  />
+                </SchemaField.Object>
+              </SchemaField.Void>
             </SchemaField.Object>
             <SchemaField.Void x-component={'ArrayCards.Addition'} title={'增加教育经历'} />
           </SchemaField.Array>

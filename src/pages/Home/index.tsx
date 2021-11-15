@@ -540,6 +540,16 @@ const Home = () => {
         </span>
       </div>
       <ToolButton />
+      <div className={'fixed right-2 bottom-2'}>
+        <img
+          alt={'github'}
+          src={'https://github.githubassets.com/favicons/favicon.png'}
+          className={'w-8 h-8 rounded-full cursor-pointer'}
+          onClick={() => {
+            window.open('https://github.com/1467602180/self-resume', '_blank');
+          }}
+        />
+      </div>
       <Drawer
         cache
         title={'编辑简历'}
