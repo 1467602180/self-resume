@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
 import { createForm, onFormValuesChange } from '@formily/core';
 import { createSchemaField, FormProvider } from '@formily/react';
-import { ArrayCards, DatePicker, FormItem, FormLayout, Input, Space } from '@formily/next';
+import { ArrayCards, FormItem, FormLayout, Input, Space } from '@formily/next';
 import store from '@/store';
 import { throttleFunc } from '@/utils';
+import CustomDatePicker from '../customDatePicker/customDatePicker';
 
 const EducationExperienceForm = () => {
   const [{ educationExperience }, resumeDispatch] = store.useModel('resume');
@@ -30,8 +31,8 @@ const EducationExperienceForm = () => {
           FormItem,
           Input,
           Space,
-          DatePicker,
           FormLayout,
+          CustomDatePicker,
         },
       }),
     [],
@@ -71,7 +72,7 @@ const EducationExperienceForm = () => {
                   title={'就读时间'}
                   name={'[start,end]'}
                   x-decorator={'FormItem'}
-                  x-component={'DatePicker.RangePicker'}
+                  x-component={'CustomDatePicker'}
                 />
               </SchemaField.Object>
             </SchemaField.Object>

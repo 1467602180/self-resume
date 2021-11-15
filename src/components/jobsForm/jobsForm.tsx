@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
 import { createForm, onFormValuesChange } from '@formily/core';
 import { createSchemaField, FormProvider } from '@formily/react';
-import { ArrayCards, ArrayItems, DatePicker, FormItem, FormLayout, Input, Select, Space } from '@formily/next';
+import { ArrayCards, ArrayItems, FormItem, FormLayout, Input, Select, Space } from '@formily/next';
 import { Tag, Typography } from '@alifd/next';
 import store from '@/store';
 import { throttleFunc } from '@/utils';
+import CustomDatePicker from '@/components/customDatePicker/customDatePicker';
 
 const JobsForm = () => {
   const [{ jobs }, resumeDispatch] = store.useModel('resume');
@@ -33,8 +34,8 @@ const JobsForm = () => {
           Select,
           ArrayCards,
           Space,
-          DatePicker,
           ArrayItems,
+          CustomDatePicker,
         },
       }),
     [],
@@ -73,7 +74,7 @@ const JobsForm = () => {
                     name={'[start,end]'}
                     x-decorator={'FormItem'}
                     required
-                    x-component={'DatePicker.RangePicker'}
+                    x-component={'CustomDatePicker'}
                   />
                 </SchemaField.Object>
                 <SchemaField.Array name={'tags'} title={'标签'} x-decorator={'FormItem'} x-component={'ArrayItems'}>

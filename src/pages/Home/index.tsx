@@ -201,6 +201,7 @@ const Home = () => {
               selfIntroduce,
               projects,
               educationExperience,
+              jobs,
             },
           });
           await localforage.setItem('storage', storage);

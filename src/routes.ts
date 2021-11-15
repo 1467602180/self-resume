@@ -1,10 +1,17 @@
 import { IRouterConfig } from 'ice';
 import Home from '@/pages/Home';
+import Layouts from '@/layouts';
 
 const routerConfig: IRouterConfig[] = [
   {
     path: '/',
-    component: Home,
+    component: Layouts,
+    children: [
+      {
+        path: '/',
+        component: Home,
+      },
+    ],
   },
 ];
 
