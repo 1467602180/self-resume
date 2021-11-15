@@ -16,7 +16,7 @@ const UserinfoForm = () => {
         },
         effects() {
           onFormValuesChange((form1) => {
-            throttleResumeDispatch(form1.values);
+            throttleResumeDispatch(form1.getFormState().values);
           });
         },
       }),

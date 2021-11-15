@@ -368,6 +368,7 @@ const Home = () => {
     const exportResume = () => {
       html2pdf(document.getElementById('self-resume'), {
         filename: '简历.pdf',
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
       });
     };
     return (
